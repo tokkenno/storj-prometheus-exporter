@@ -33,6 +33,15 @@ type DailyBandwidth struct {
 	IntervalStart time.Time       `json:"intervalStart"`
 }
 
+func (db *DailyBandwidth) Add(other *DailyBandwidth) {
+	db.Ingress.Audit += other.Ingress.Audit
+	db.Ingress.Repair += other.Ingress.Repair
+	db.Ingress.Usage += other.Ingress.Usage
+	db.Egress.Usage += other.Egress.Usage
+	db.Egress.Repair += other.Egress.Repair
+	db.Delete += other.Delete
+}
+
 type SatelliteCheck struct {
 	TotalCount   float64 `json:"totalCount"`
 	SuccessCount float64 `json:"successCount"`
