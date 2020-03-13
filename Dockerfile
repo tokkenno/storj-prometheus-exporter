@@ -18,7 +18,6 @@ ADD . /app/
 WORKDIR /app
 
 # do de build
-RUN go get -d -v
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s" -o /app/storj-prometheus-exporter
 
 FROM scratch
