@@ -12,6 +12,10 @@ var (
 		Name: "storj_node_id",
 		Help: "The client ID",
 	}, []string{"node", "host"})
+	nodeVersionSensor = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "storj_node_version",
+		Help: "The client version",
+	}, []string{"node", "host", "version"})
 	isUpdateSensor = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "storj_node_updated",
 		Help: "The client is updated",
@@ -40,6 +44,7 @@ var (
 
 func SetDashboardInfo(hostId string, dashboardInfo *models.DashboardData) {
 	nodeIdSensor.With(prometheus.Labels{"node": dashboardInfo.NodeID, "host": hostId}).Set(1.0)
+	nodeVersionSensor.With(prometheus.Labels{"node": dashboardInfo.NodeID, "host": hostId, "version": dashboardInfo.Version}).Set(1.0)
 
 	if dashboardInfo.UpToDate {
 		isUpdateSensor.With(prometheus.Labels{"node": dashboardInfo.NodeID, "host": hostId}).Set(1.0)
