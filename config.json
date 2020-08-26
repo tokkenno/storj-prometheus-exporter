@@ -1,0 +1,14 @@
+{
+  "monitors": [
+    {
+      "api": "storj",
+      "url": "spica.storj.mine.aitorgf.com",
+      "interval": 3
+    },
+    {
+      "api": "xmrig",
+      "url": "spica.monero.mine.aitorgf.com",
+      "interval": 5
+    }
+  ]
+}

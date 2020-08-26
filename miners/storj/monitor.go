@@ -1,47 +1,35 @@
-package monitors
+package storj
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/prometheus/common/log"
-	"github.com/tokkenno/storj-prometheus-exporter/models"
-	"github.com/tokkenno/storj-prometheus-exporter/sensors"
+	"storj-prometheus-exporter/miners/storj/models"
+	"storj-prometheus-exporter/miners/storj/sensors"
 	"io/ioutil"
 	"net/http"
+	"storj-prometheus-exporter/common"
 	"strings"
 	"time"
 )
 
-type StorjMonitor struct {
-	url     string
-	Refresh time.Duration
+type Monitor struct {
+	config common.MonitorConfig
 }
 
-func NewStorjMonitor(url string) *StorjMonitor {
-	return &StorjMonitor{
-		url:     url,
-		Refresh: 5 * time.Second,
-	}
+func (mon Monitor) GetApiName() string {
+	return "storj"
 }
 
-func (mon *StorjMonitor) Start() {
-	go func() {
-		for {
-			mon.update()
-			time.Sleep(mon.Refresh)
-		}
-	}()
-}
-
-func (mon *StorjMonitor) update() {
-	err := mon.UpdateSNO(mon.url)
+func (mon Monitor) Update() {
+	err := mon.UpdateSNO(mon.config.Url)
 	if err != nil {
-		log.Warn(fmt.Sprintf("Error while update node <%s>:", mon.url))
+		log.Warn(fmt.Sprintf("Error while update node <%s>:", mon.config.Url))
 		log.Warn(err)
 	}
 }
 
-func (mon *StorjMonitor) UpdateSNO(url string) error {
+func (mon *Monitor) UpdateSNO(url string) error {
 	start := time.Now()
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/sno/", url))
 	if err != nil {
@@ -80,7 +68,7 @@ func (mon *StorjMonitor) UpdateSNO(url string) error {
 	return nil
 }
 
-func (mon *StorjMonitor) UpdateSNOSatellite(url string, nodeId string, satelliteId string) error {
+func (mon *Monitor) UpdateSNOSatellite(url string, nodeId string, satelliteId string) error {
 	start := time.Now()
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/sno/satellite/%s", url, satelliteId))
 	if err != nil {
@@ -106,7 +94,7 @@ func (mon *StorjMonitor) UpdateSNOSatellite(url string, nodeId string, satellite
 	return nil
 }
 
-func (mon *StorjMonitor) UpdateDashboard(url string) error {
+func (mon *Monitor) UpdateDashboard(url string) error {
 	start := time.Now()
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/dashboard", url))
 	if err != nil {
@@ -140,7 +128,7 @@ func (mon *StorjMonitor) UpdateDashboard(url string) error {
 	return nil
 }
 
-func (mon *StorjMonitor) UpdateSatellite(url string, nodeId string, satelliteId string) error {
+func (mon *Monitor) UpdateSatellite(url string, nodeId string, satelliteId string) error {
 	start := time.Now()
 	resp, err := http.Get(fmt.Sprintf("http://%s/api/satellite/%s", url, satelliteId))
 	if err != nil {

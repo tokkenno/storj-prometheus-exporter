@@ -1,10 +1,10 @@
-module github.com/tokkenno/storj-prometheus-exporter
+module storj-prometheus-exporter
 
-go 1.13
+go 1.14
+
+require github.com/robfig/cron/v3 v3.0.1 // indirect
 
 require (
-	github.com/influxdata/influxdb-client-go v0.1.5
-	github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d
-	github.com/prometheus/client_golang v1.5.0
-	github.com/prometheus/common v0.9.1
+	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/common v0.10.0
 )

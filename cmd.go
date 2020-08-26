@@ -1,41 +1,78 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/tokkenno/storj-prometheus-exporter/monitors"
+	"github.com/robfig/cron/v3"
+	"io/ioutil"
+	"log"
+	"math"
 	"net/http"
 	"os"
-	"strings"
-)
-
-const (
-	port = 2112
+	"storj-prometheus-exporter/common"
+	"storj-prometheus-exporter/miners/storj"
 )
 
 func main() {
-	var nodes []string
+	configFile, err := os.Open("config.json")
 
-	for _, e := range os.Environ() {
-		pair := strings.SplitN(e, "=", 2)
-		if pair[0] == "NODES" {
-			nodes = strings.Split(pair[1], ",")
+	if err != nil {
+		log.Fatalf("Error while open config file: %s", err.Error())
+		os.Exit(1)
+	}
+
+	defer configFile.Close()
+
+	configByteValue, _ := ioutil.ReadAll(configFile)
+
+	var config common.Config
+
+	err = json.Unmarshal(configByteValue, &config)
+
+	if err != nil {
+		log.Fatalf("Error while load config file: %s", err.Error())
+		os.Exit(2)
+	}
+
+	targets := []common.Target{
+		new(storj.Target),
+	}
+
+	cronScheduler := cron.New()
+
+	for _, monitor := range config.Monitors {
+		targetFound := false
+		for _, target := range targets {
+			if target.GetApiName() == monitor.Api {
+				log.Printf("Scheduling update for %s on: %s (Each %ds)", monitor.Api, monitor.Url, monitor.Interval)
+				monitorInstance := target.GenMonitor(monitor)
+				_, err := cronScheduler.AddFunc(fmt.Sprintf("@every %ds", monitor.Interval), func() {
+					monitorInstance.Update()
+				})
+				if err != nil {
+					log.Fatal(err.Error())
+				} else {
+					targetFound = true
+				}
+				break
+			}
+		}
+		if !targetFound {
+			log.Printf("Not api of type %s found.", monitor.Api)
 		}
 	}
 
-	if nodes != nil && len(nodes) > 0 {
-		for _, nodeUrl := range nodes {
-			fmt.Println(fmt.Sprintf("Starting to monitor node in %s", nodeUrl))
-			mon := monitors.NewStorjMonitor(nodeUrl)
-			mon.Start()
-		}
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
 
-		http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 
-		listenUri := fmt.Sprintf(":%d", port)
-		fmt.Println(fmt.Sprintf("Listening on %s", listenUri))
-		http.ListenAndServe(listenUri, nil)
-	} else {
-		fmt.Println("NODES env variable not set or malformed. Exiting...")
+	if config.Port < 1 || config.Port > int(math.MaxUint16) {
+		config.Port = 2112
 	}
+	listenUri := fmt.Sprintf(":%d", config.Port)
+	log.Print(fmt.Sprintf("Listening on %s", listenUri))
+
+	http.ListenAndServe(listenUri, nil)
 }

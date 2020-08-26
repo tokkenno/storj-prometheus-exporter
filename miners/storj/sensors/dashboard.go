@@ -1,9 +1,10 @@
+
 package sensors
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/tokkenno/storj-prometheus-exporter/models"
+	"storj-prometheus-exporter/miners/storj/models"
 	"time"
 )
 
